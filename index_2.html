@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NovaGuard AI - Deepfake Detector</title>
+    <!-- We are using Tailwind CSS for styling, loaded from a CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            /* Deep dark background with a subtle radial glow */
+            background-color: #030712; /* bg-gray-950 */
+            background-image: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, rgba(3, 7, 18, 0) 60%);
+            overflow-x: hidden;
+        }
+        
+        /* Custom file input style */
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            cursor: pointer;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Fancy gradient button */
+            background-image: linear-gradient(to right, #3b82f6, #6366f1);
+            color: white;
+            padding: 0.75rem 1.5rem; /* px-6 py-3 */
+            border-radius: 0.75rem; /* rounded-xl */
+            font-weight: 600; /* font-semibold */
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+        .file-input-wrapper:hover .file-input-label {
+            /* Hover effect */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulseGlow {
+            /* Astonishing glow for splash text */
+            0%, 100% { 
+                opacity: 1;
+                text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5);
+            }
+            50% { 
+                opacity: 0.9;
+                text-shadow: 0 0 20px rgba(59, 130, 246, 1), 0 0 40px rgba(59, 130, 246, 0.7);
+            }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .fade-out { animation: fadeOut 0.8s ease-in forwards; }
+        .slide-up { animation: slideUp 0.6s ease-out forwards; }
+        .splash-text { animation: pulseGlow 3s ease-in-out infinite; }
+
+        /* Helper class to dim disabled buttons */
+        .disabled-button {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body class="text-gray-100 flex items-center justify-center min-h-screen p-4 py-8">
+
+    <!-- STAGE 1: Splash Screen -->
+    <div id="splash-screen" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-center p-4">
+        <svg class="w-24 h-24 text-blue-500 mb-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.604-.36-3.112-.995-4.498a11.95 11.95 0 0 0-8.402-4.498Z" />
+        </svg>
+        <h1 class="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 splash-text">
+            Welcome to NovaGuard AI
+        </h1>
+        <p class="text-gray-400 mt-4 text-lg">Verifying digital reality.</p>
+    </div>
+
+    <!-- STAGE 2: Name Input Screen -->
+    <div id="name-screen" class="fixed hidden inset-0 z-40 bg-gray-950 flex items-center justify-center p-4">
+        <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 md:p-12 w-full max-w-md text-center border border-gray-800">
+            <h1 class="text-3xl md:text-4xl font-bold text-white">
+                Who are you?
+            </h1>
+            <p class="text-gray-400 mt-2 mb-8">Please enter your name to begin.</p>
+            <div class="space-y-6">
+                <input id="name-input" type="text" placeholder="Your name..." class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
+                <button id="continue-button" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled-button">
+                    Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STAGE 3: Main Content (Analyzer) -->
+    <div id="main-content" class="hidden w-full max-w-3xl">
+        <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 md:p-12 w-full transform transition-all border border-gray-800">
+            <!-- Header -->
+            <div class="text-center mb-10">
+                <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
+                    NovaGuard Analyzer
+                </h1>
+                <!-- Personalized welcome message -->
+                <p id="welcome-message" class="text-gray-300 mt-4 text-xl"></p>
+                <p class="text-gray-400 mt-2">
+                    Upload a file to check its authenticity.
+                </p>
+            </div>
+
+            <!-- Uploader Section -->
+            <div class="space-y-8">
+                
+                <!-- 1. Image Uploader -->
+                <div class="uploader-card bg-gray-800/50 p-6 rounded-xl border border-gray-700 slide-up" style="animation-delay: 100ms;">
+                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Analyze an Image
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="file-input-wrapper w-full">
+                            <label for="image-file-upload" class="file-input-label">
+                                <span id="image-file-name">Choose an image...</span>
+                            </label>
+                            <!-- THIS IS THE FIX: The 'accept' attribute is removed -->
+                            <input id="image-file-upload" type="file">
+                        </div>
+                        <button id="image-upload-button" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled-button">
+                            Analyze Image
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Video Uploader -->
+                <div class="uploader-card bg-gray-800/50 p-6 rounded-xl border border-gray-700 slide-up" style="animation-delay: 200ms;">
+                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 5h8a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2z" />
+                        </svg>
+                        Analyze a Video
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="file-input-wrapper w-full">
+                            <label for="video-file-upload" class="file-input-label">
+                                <span id="video-file-name">Choose a video...</span>
+                            </label>
+                            <!-- THIS IS THE FIX: The 'accept' attribute is removed -->
+                            <input id="video-file-upload" type="file">
+                        </div>
+                        <button id="video-upload-button" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled-button">
+                            Analyze Video
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. Audio Uploader -->
+                <div class="uploader-card bg-gray-800/50 p-6 rounded-xl border border-gray-700 slide-up" style="animation-delay: 300ms;">
+                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 11v2m0-6v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Analyze an Audio File
+                    </h2>
+                    <div class="space-y-4">
+                        <div class="file-input-wrapper w-full">
+                            <label for="audio-file-upload" class="file-input-label">
+                                <span id="audio-file-name">Choose an audio file...</span>
+                            </label>
+                            <!-- THIS IS THE FIX: The 'accept' attribute is removed -->
+                            <input id="audio-file-upload" type="file">
+                        </div>
+                        <button id="audio-upload-button" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled-button">
+                            Analyze Audio
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section (hidden by default) -->
+            <div id="results-container" class="mt-10 hidden">
+                <!-- Spinner (shown during loading) -->
+                <div id="loading-spinner" class="flex flex-col items-center justify-center text-gray-400 hidden">
+                    <div class="spinner w-12 h-12 border-4 border-t-blue-500 border-gray-700 rounded-full mb-4"></div>
+                    <p class="text-lg font-semibold">Analyzing... this may take a moment.</p>
+                </div>
+                <!-- Result Content (populated by JS) -->
+                <div id="result-content" class="hidden">
+                    <h2 class="text-2xl font-bold text-center mb-6">Analysis Result</h2>
+                    <div id="result-card" class="rounded-lg p-6">
+                        <!-- Dynamic content will go here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error Message Bar -->
+            <div id="error-message" class="hidden mt-6 bg-red-800/30 border border-red-700 text-red-100 px-4 py-3 rounded-lg" role="alert">
+                <strong class="font-bold">Error:</strong>
+                <span id="error-text" class="block sm:inline">Something went wrong.</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Get references for ALL 3 STAGES ---
+        const splashScreen = document.getElementById('splash-screen');
+        const nameScreen = document.getElementById('name-screen');
+        const mainContent = document.getElementById('main-content');
+        
+        const nameInput = document.getElementById('name-input');
+        const continueButton = document.getElementById('continue-button');
+        const welcomeMessage = document.getElementById('welcome-message');
+
+        // --- Analyzer Elements ---
+        const resultsContainer = document.getElementById('results-container');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const resultContent = document.getElementById('result-content');
+        const resultCard = document.getElementById('result-card');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        // Store selected files
+        let selectedFiles = {
+            image: null,
+            video: null,
+            audio: null
+        };
+
+        // --- STAGE 1 & 2: App Flow Logic ---
+        
+        // On page load, start the flow
+        window.addEventListener('load', () => {
+            // Stage 1: Show Splash Screen for 3 seconds
+            setTimeout(() => {
+                splashScreen.classList.add('fade-out');
+                
+                // Stage 2: Fade in Name Screen
+                nameScreen.classList.remove('hidden');
+                nameScreen.classList.add('fade-in');
+
+                // After fade-out, hide splash screen
+                setTimeout(() => {
+                    splashScreen.style.display = 'none';
+                }, 800); // Match fade-out duration
+            }, 3000); // How long the splash screen stays
+        });
+
+        // Name screen logic
+        continueButton.disabled = true;
+        nameInput.addEventListener('input', () => {
+            if (nameInput.value.trim() !== '') {
+                continueButton.disabled = false;
+                continueButton.classList.remove('disabled-button');
+            } else {
+                continueButton.disabled = true;
+                continueButton.classList.add('disabled-button');
+            }
+        });
+
+        continueButton.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            if (name) {
+                // Set the personalized welcome message
+                welcomeMessage.textContent = `Welcome, ${name}!`;
+                
+                // Fade out name screen
+                nameScreen.classList.add('fade-out');
+                
+                // Stage 3: Fade in Main App
+                mainContent.classList.remove('hidden');
+                mainContent.classList.add('fade-in');
+
+                // After fade-out, hide name screen
+                setTimeout(() => {
+                    nameScreen.style.display = 'none';
+                }, 800); // Match fade-out duration
+            }
+        });
+
+
+        // --- STAGE 3: Analyzer App Logic ---
+
+        async function handleFileUpload(file, buttonElement) {
+            if (!file) {
+                showError("Please select a file first.");
+                return;
+            }
+
+            const originalButtonText = buttonElement.textContent;
+            
+            hideError();
+            resultsContainer.classList.remove('hidden');
+            resultContent.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            
+            // Disable all upload buttons
+            document.querySelectorAll('.uploader-card button').forEach(btn => {
+                btn.disabled = true;
+                btn.classList.add('disabled-button');
+            });
+            buttonElement.textContent = 'Analyzing...';
+            
+            const formData = new FormData();
+            formData.append('file', file); 
+
+            try {
+                // This is the only part that matters: it sends to the /upload route
+                // It doesn't know or care about 'app.py' or 'app_3.py'
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error("Upload failed:", error);
+                showError(error.message);
+                resultsContainer.classList.add('hidden');
+                // THIS IS THE FIX: Removed the stray "S."
+            }
+        }
+
+        function setupUploader(type, inputId, nameDisplayId, buttonId) {
+            const fileInput = document.getElementById(inputId);
+            const fileNameDisplay = document.getElementById(nameDisplayId);
+            const uploadButton = document.getElementById(buttonId);
+
+            uploadButton.disabled = true;
+
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    selectedFiles[type] = file; 
+                    fileNameDisplay.textContent = file.name;
+                    uploadButton.disabled = false; 
+                    uploadButton.classList.remove('disabled-button');
+                } else {
+                    selectedFiles[type] = null;
+                    fileNameDisplay.textContent = `Choose a ${type}...`;
+                    uploadButton.disabled = true; 
+                    uploadButton.classList.add('disabled-button');
+                }
+                // THIS IS THE FIX: The problematic line is removed
+                // fileInput.value = null; 
+            });
+
+            uploadButton.addEventListener('click', () => {
+                handleFileUpload(selectedFiles[type], uploadButton);
+            });
+        }
+
+        function displayResults(data) {
+            let cardContent = '';
+            let cardClass = '';
+
+            if (data.is_deepfake) {
+                // Style for "Deepfake Detected"
+                cardClass = 'bg-red-900/50 border border-red-700';
+                cardContent = `
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-300 mr-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div>
+                            <h3 class="text-2xl font-bold text-red-100">Deepfake Detected</h3>
+                            <p class="text-red-200 mt-1">${data.message}</p>
+                            <div class="text-4xl font-bold text-white mt-4">${data.confidence}% <span class="text-lg font-normal">Confidence</span></div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Style for "Authentic"
+                cardClass = 'bg-green-900/50 border border-green-700';
+                cardContent = `
+                    <div class="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-300 mr-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div>
+                            <h3 class="text-2xl font-bold text-green-100">Authentic</h3>
+                            <p class="text-green-200 mt-1">${data.message}</p>
+                            <div class="text-4xl font-bold text-white mt-4">${data.confidence}% <span class="text-lg font-normal">Confidence (of authenticity)</span></div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultCard.className = `rounded-lg p-6 ${cardClass}`;
+            resultCard.innerHTML = cardContent;
+            
+            resultContent.classList.remove('hidden');
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+        
+        // --- Initialize all three uploaders ---
+        setupUploader('image', 'image-file-upload', 'image-file-name', 'image-upload-button');
+        setupUploader('video', 'video-file-upload', 'video-file-name', 'video-upload-button');
+        setupUploader('audio', 'audio-file-upload', 'audio-file-name', 'audio-upload-button');
+
+    </script>
+</body>
+</html>
+
