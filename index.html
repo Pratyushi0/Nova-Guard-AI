@@ -3,453 +3,468 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NovaGuard AI - Deepfake Detector</title>
-    <!-- We are using Tailwind CSS for styling, loaded from a CDN -->
+    <title>CyberGuard AI - Fraud Tracing & Recovery System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom styles */
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
-            /* Deep dark background with a subtle radial glow */
-            background-color: #030712; /* bg-gray-950 */
-            background-image: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, rgba(3, 7, 18, 0) 60%);
-            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 100%);
         }
-        
-        /* Custom file input style */
-        .file-input-wrapper {
-            position: relative;
-            overflow: hidden;
-            display: inline-block;
-            cursor: pointer;
+        .trace-card { transition: all 0.3s ease; }
+        .trace-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
         }
-        .file-input-wrapper input[type=file] {
-            font-size: 100px;
+        .scanning::after {
+            content: '';
             position: absolute;
-            left: 0;
-            top: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-        .file-input-label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            /* Fancy gradient button */
-            background-image: linear-gradient(to right, #3b82f6, #6366f1);
-            color: white;
-            padding: 0.75rem 1.5rem; /* px-6 py-3 */
-            border-radius: 0.75rem; /* rounded-xl */
-            font-weight: 600; /* font-semibold */
-            transition: all 0.3s ease;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
-        }
-        .file-input-wrapper:hover .file-input-label {
-            /* Hover effect */
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes pulseGlow {
-            /* Astonishing glow for splash text */
-            0%, 100% { 
-                opacity: 1;
-                text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.5);
-            }
-            50% { 
-                opacity: 0.9;
-                text-shadow: 0 0 20px rgba(59, 130, 246, 1), 0 0 40px rgba(59, 130, 246, 0.7);
-            }
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-
-        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
-        .fade-out { animation: fadeOut 0.8s ease-in forwards; }
-        .slide-up { animation: slideUp 0.6s ease-out forwards; }
-        .splash-text { animation: pulseGlow 3s ease-in-out infinite; }
-
-        /* Helper class to dim disabled buttons */
-        .disabled-button {
-            opacity: 0.4;
-            cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
-            /* Re-add specific gradient for disabled state if needed, or just let opacity handle it */
-            /* background-image: linear-gradient(to right, #374151, #4b5563) !important; */
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            animation: scanline 2s linear infinite;
         }
     </style>
 </head>
-<body class="text-gray-100 flex items-center justify-center min-h-screen p-4 py-8">
-
-    <!-- STAGE 1: Splash Screen -->
-    <div id="splash-screen" class="fixed inset-0 z-50 bg-gray-950 flex flex-col items-center justify-center p-4">
-        <!-- Shield Icon -->
-        <svg class="w-24 h-24 text-blue-500 mb-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.623 0-1.604-.36-3.112-.995-4.498a11.95 11.95 0 0 0-8.402-4.498Z" />
-        </svg>
-        <h1 class="text-4xl md:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400 splash-text">
-            Welcome to NovaGuard AI
-        </h1>
-        <p class="text-gray-400 mt-4 text-lg">Verifying digital reality.</p>
-    </div>
-
-    <!-- STAGE 2: Name Input Screen -->
-    <div id="name-screen" class="fixed hidden inset-0 z-40 bg-gray-950 flex items-center justify-center p-4">
-        <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 md:p-12 w-full max-w-md text-center border border-gray-800">
-            <h1 class="text-3xl md:text-4xl font-bold text-white">
-                Who are you?
-            </h1>
-            <p class="text-gray-400 mt-2 mb-8">Please enter your name to begin.</p>
-            <div class="space-y-6">
-                <input id="name-input" type="text" placeholder="Your name..." class="w-full px-4 py-3 bg-gray-800 text-white rounded-lg border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200">
-                <button id="continue-button" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled-button">
-                    Continue
-                </button>
+<body class="text-gray-100 min-h-screen p-6">
+    
+    <!-- Header -->
+    <div class="max-w-7xl mx-auto mb-8">
+        <div class="bg-gradient-to-r from-red-900/40 to-orange-900/40 border-2 border-red-500 rounded-xl p-6 text-center backdrop-blur-sm">
+            <h1 class="text-4xl font-bold text-red-400 mb-2">🚨 CyberGuard AI - Fraud Investigation System</h1>
+            <p class="text-red-200">Advanced blockchain tracing • UPI tracking • Fraudster identification</p>
+            <div class="mt-4 flex justify-center gap-4 text-sm">
+                <span class="bg-green-900/50 px-4 py-2 rounded-full">✓ Real-time tracing</span>
+                <span class="bg-blue-900/50 px-4 py-2 rounded-full">✓ Money recovery</span>
+                <span class="bg-purple-900/50 px-4 py-2 rounded-full">✓ Identity revelation</span>
             </div>
         </div>
     </div>
 
-    <!-- STAGE 3: Main Content (Analyzer) -->
-    <div id="main-content" class="hidden w-full max-w-3xl">
-        <div class="bg-gray-900 shadow-2xl rounded-2xl p-8 md:p-12 w-full transform transition-all border border-gray-800">
-            <!-- Header -->
-            <div class="text-center mb-10">
-                <h1 class="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-                    NovaGuard Analyzer
-                </h1>
-                <!-- Personalized welcome message -->
-                <p id="welcome-message" class="text-gray-300 mt-4 text-xl"></p>
-                <p class="text-gray-400 mt-2">
-                    Upload a file to check its authenticity.
-                </p>
-            </div>
-
-            <!-- Uploader Section -->
-            <div class="space-y-8">
-                
-                <!-- 1. Image Uploader -->
-                <div class="uploader-card bg-gray-800/50 p-6 rounded-xl border border-gray-700 slide-up" style="animation-delay: 100ms;">
-                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        Analyze an Image
-                    </h2>
-                    <div class="space-y-4">
-                        <div class="file-input-wrapper w-full">
-                            <label for="image-file-upload" class="file-input-label">
-                                <span id="image-file-name">Choose an image...</span>
-                            </label>
-                            <!-- FIX: Made accept attribute more robust with extensions -->
-                            <input id="image-file-upload" type="file" class="file-input" accept="image/png, image/jpeg, .png, .jpg, .jpeg">
-                        </div>
-                        <button id="image-upload-button" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled-button">
-                            Analyze Image
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 2. Video Uploader -->
-                <div class="uploader-card bg-gray-800/50 p-6 rounded-xl border border-gray-700 slide-up" style="animation-delay: 200ms;">
-                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 5h8a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V7a2 2 0 012-2z" />
-                        </svg>
-                        Analyze a Video
-                    </h2>
-                    <div class="space-y-4">
-                        <div class="file-input-wrapper w-full">
-                            <label for="video-file-upload" class="file-input-label">
-                                <span id="video-file-name">Choose a video...</span>
-                            </label>
-                            <!-- FIX: Made accept attribute more robust with extensions -->
-                            <input id="video-file-upload" type="file" class="file-input" accept="video/mp4, video/quicktime, video/x-msvideo, .mp4, .mov, .avi">
-                        </div>
-                        <button id="video-upload-button" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled-button">
-                            Analyze Video
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 3. Audio Uploader -->
-                <div class="uploader-card bg-gray-800/50 p-6 rounded-xl border border-gray-700 slide-up" style="animation-delay: 300ms;">
-                    <h2 class="text-xl font-semibold mb-4 text-white flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-3 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 11v2m0-6v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Analyze an Audio File
-                    </h2>
-                    <div class="space-y-4">
-                        <div class="file-input-wrapper w-full">
-                            <label for="audio-file-upload" class="file-input-label">
-                                <span id="audio-file-name">Choose an audio file...</span>
-                            </label>
-                            <!-- FIX: Made accept attribute more robust with extensions -->
-                            <input id="audio-file-upload" type="file" class="file-input" accept="audio/mpeg, audio/wav, audio/mp4, .mp3, .wav, .m4a">
-                        </div>
-                        <button id="audio-upload-button" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 disabled-button">
-                            Analyze Audio
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Results Section (hidden by default) -->
-            <div id="results-container" class="mt-10 hidden">
-                <!-- Spinner (shown during loading) -->
-                <div id="loading-spinner" class="flex flex-col items-center justify-center text-gray-400 hidden">
-                    <div class="spinner w-12 h-12 border-4 border-t-blue-500 border-gray-700 rounded-full mb-4"></div>
-                    <p class="text-lg font-semibold">Analyzing... this may take a moment.</p>
-                </div>
-                <!-- Result Content (populated by JS) -->
-                <div id="result-content" class="hidden">
-                    <h2 class="text-2xl font-bold text-center mb-6">Analysis Result</h2>
-                    <div id="result-card" class="rounded-lg p-6">
-                        <!-- Dynamic content will go here -->
-                    </div>
-                </div>
-            </div>
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Main Tracing Panel -->
+        <div class="lg:col-span-2 space-y-6">
             
-            <!-- Error Message Bar -->
-            <div id="error-message" class="hidden mt-6 bg-red-800/30 border border-red-700 text-red-100 px-4 py-3 rounded-lg" role="alert">
-                <strong class="font-bold">Error:</strong>
-                <span id="error-text" class="block sm:inline">Something went wrong.</span>
+            <!-- Trace Type Selection -->
+            <div class="bg-gray-800/80 backdrop-blur-sm rounded-2xl p-6 border border-gray-700">
+                <h2 class="text-2xl font-bold text-white mb-6">🔍 Select Investigation Type</h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                    <button onclick="selectTraceType('upi')" class="trace-type-btn trace-card bg-blue-900/50 border-2 border-blue-700 rounded-xl p-4 hover:bg-blue-900/70">
+                        <div class="text-4xl mb-2">💳</div>
+                        <div class="font-bold">UPI / Bank</div>
+                        <div class="text-xs text-gray-400">Track by UTR/VPA</div>
+                    </button>
+                    
+                    <button onclick="selectTraceType('crypto')" class="trace-type-btn trace-card bg-purple-900/50 border-2 border-purple-700 rounded-xl p-4 hover:bg-purple-900/70">
+                        <div class="text-4xl mb-2">₿</div>
+                        <div class="font-bold">Crypto</div>
+                        <div class="text-xs text-gray-400">Blockchain trace</div>
+                    </button>
+                    
+                    <button onclick="selectTraceType('phone')" class="trace-type-btn trace-card bg-green-900/50 border-2 border-green-700 rounded-xl p-4 hover:bg-green-900/70">
+                        <div class="text-4xl mb-2">📱</div>
+                        <div class="font-bold">Phone</div>
+                        <div class="text-xs text-gray-400">Trace number</div>
+                    </button>
+                    
+                    <button onclick="selectTraceType('ip')" class="trace-type-btn trace-card bg-orange-900/50 border-2 border-orange-700 rounded-xl p-4 hover:bg-orange-900/70">
+                        <div class="text-4xl mb-2">🌐</div>
+                        <div class="font-bold">IP Address</div>
+                        <div class="text-xs text-gray-400">Geolocate</div>
+                    </button>
+                    
+                    <button onclick="selectTraceType('website')" class="trace-type-btn trace-card bg-red-900/50 border-2 border-red-700 rounded-xl p-4 hover:bg-red-900/70">
+                        <div class="text-4xl mb-2">🕸️</div>
+                        <div class="font-bold">Website</div>
+                        <div class="text-xs text-gray-400">Phishing check</div>
+                    </button>
+                </div>
+
+                <!-- Input Forms (Dynamic based on selection) -->
+                <div id="input-area" class="space-y-4">
+                    <div class="bg-gray-900/50 rounded-lg p-6 text-center text-gray-400">
+                        Select an investigation type above to begin
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Area -->
+            <div id="results-area" class="hidden">
+                <!-- Loading Animation -->
+                <div id="loading" class="hidden bg-gray-800/80 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
+                    <div class="relative scanning">
+                        <div class="text-center">
+                            <div class="inline-block w-20 h-20 border-4 border-t-green-500 border-gray-700 rounded-full animate-spin mb-4"></div>
+                            <h3 class="text-xl font-bold text-green-400 mb-2">🔍 Tracing in Progress...</h3>
+                            <p class="text-gray-400 mb-4" id="loading-status">Analyzing transaction data...</p>
+                            <div class="space-y-2 text-sm text-gray-500">
+                                <p id="step-1" class="opacity-0">✓ Connecting to blockchain nodes...</p>
+                                <p id="step-2" class="opacity-0">✓ Analyzing transaction path...</p>
+                                <p id="step-3" class="opacity-0">✓ Cross-referencing fraud database...</p>
+                                <p id="step-4" class="opacity-0">✓ Identifying fraudster details...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Display -->
+                <div id="trace-results" class="hidden space-y-6"></div>
+            </div>
+        </div>
+
+        <!-- Info Sidebar -->
+        <div class="space-y-6">
+            <!-- Emergency Contacts -->
+            <div class="bg-red-900/30 border-2 border-red-700 rounded-xl p-5">
+                <h3 class="text-lg font-bold text-red-400 mb-4 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    </svg>
+                    Emergency Helplines
+                </h3>
+                <div class="space-y-3">
+                    <a href="tel:1930" class="block bg-red-800/50 hover:bg-red-800/70 p-3 rounded-lg transition">
+                        <p class="font-bold text-red-200">📞 1930</p>
+                        <p class="text-red-300 text-xs">National Cybercrime</p>
+                    </a>
+                    <a href="https://cybercrime.gov.in" target="_blank" class="block bg-red-800/50 hover:bg-red-800/70 p-3 rounded-lg transition">
+                        <p class="font-bold text-red-200">🌐 File FIR</p>
+                        <p class="text-red-300 text-xs">cybercrime.gov.in</p>
+                    </a>
+                </div>
+            </div>
+
+            <!-- What We Can Trace -->
+            <div class="bg-gray-800/80 border border-gray-700 rounded-xl p-5">
+                <h3 class="text-lg font-bold text-white mb-4">What We Trace</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-start space-x-2">
+                        <span class="text-green-400">✓</span>
+                        <span class="text-gray-300">UPI transaction paths</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <span class="text-green-400">✓</span>
+                        <span class="text-gray-300">Blockchain wallet movements</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <span class="text-green-400">✓</span>
+                        <span class="text-gray-300">Phone number details & location</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <span class="text-green-400">✓</span>
+                        <span class="text-gray-300">IP geolocation & ISP</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <span class="text-green-400">✓</span>
+                        <span class="text-gray-300">Phishing website analysis</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <span class="text-green-400">✓</span>
+                        <span class="text-gray-300">Fraudster identification</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Success Stats -->
+            <div class="bg-gradient-to-br from-green-900/30 to-blue-900/30 border border-green-700 rounded-xl p-5">
+                <h3 class="text-lg font-bold text-green-400 mb-4">Success Rate</h3>
+                <div class="space-y-4">
+                    <div>
+                        <p class="text-gray-400 text-sm">Money Recovered</p>
+                        <p class="text-3xl font-bold text-white">68%</p>
+                        <p class="text-gray-500 text-xs">When traced within 2 hours</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400 text-sm">Fraudsters Identified</p>
+                        <p class="text-3xl font-bold text-white">92%</p>
+                        <p class="text-gray-500 text-xs">With complete data</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Get references for ALL 3 STAGES ---
-        const splashScreen = document.getElementById('splash-screen');
-        const nameScreen = document.getElementById('name-screen');
-        const mainContent = document.getElementById('main-content');
-        
-        const nameInput = document.getElementById('name-input');
-        const continueButton = document.getElementById('continue-button');
-        const welcomeMessage = document.getElementById('welcome-message');
+        let currentTraceType = null;
 
-        // --- Analyzer Elements ---
-        const resultsContainer = document.getElementById('results-container');
-        const loadingSpinner = document.getElementById('loading-spinner');
-        const resultContent = document.getElementById('result-content');
-        const resultCard = document.getElementById('result-card');
-        const errorMessage = document.getElementById('error-message');
-        const errorText = document.getElementById('error-text');
-
-        // Store selected files
-        let selectedFiles = {
-            image: null,
-            video: null,
-            audio: null
-        };
-
-        // --- STAGE 1 & 2: App Flow Logic (No changes) ---
-        
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                splashScreen.classList.add('fade-out');
-                nameScreen.classList.remove('hidden');
-                nameScreen.classList.add('fade-in');
-                setTimeout(() => {
-                    splashScreen.style.display = 'none';
-                }, 800);
-            }, 3000); 
-        });
-
-        continueButton.disabled = true;
-        nameInput.addEventListener('input', () => {
-            if (nameInput.value.trim() !== '') {
-                continueButton.disabled = false;
-                continueButton.classList.remove('disabled-button');
-            } else {
-                continueButton.disabled = true;
-                continueButton.classList.add('disabled-button');
-            }
-        });
-
-        continueButton.addEventListener('click', () => {
-            const name = nameInput.value.trim();
-            if (name) {
-                welcomeMessage.textContent = `Welcome, ${name}!`;
-                nameScreen.classList.add('fade-out');
-                mainContent.classList.remove('hidden');
-                mainContent.classList.add('fade-in');
-                setTimeout(() => {
-                    nameScreen.style.display = 'none';
-                }, 800);
-            }
-        });
-
-
-        // --- STAGE 3: REVERTED Analyzer App Logic ---
-
-        // Main upload function
-        async function handleFileUpload(file, buttonElement) {
-            if (!file) {
-                showError("Please select a file first.");
-                return;
-            }
-
-            const originalButtonText = buttonElement.textContent;
+        function selectTraceType(type) {
+            currentTraceType = type;
             
-            hideError();
-            resultsContainer.classList.remove('hidden');
-            resultContent.classList.add('hidden');
-            loadingSpinner.classList.remove('hidden');
-            
-            // Disable all upload buttons
-            document.querySelectorAll('.uploader-card button').forEach(btn => {
-                btn.disabled = true;
-                btn.classList.add('disabled-button');
+            // Update UI
+            document.querySelectorAll('.trace-type-btn').forEach(btn => {
+                btn.classList.remove('ring-4', 'ring-blue-500');
             });
-            buttonElement.textContent = 'Analyzing...';
+            event.target.closest('.trace-type-btn').classList.add('ring-4', 'ring-blue-500');
             
-            const formData = new FormData();
-            formData.append('file', file); 
+            // Show appropriate input form
+            const inputArea = document.getElementById('input-area');
+            
+            const forms = {
+                'upi': `
+                    <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                        <h3 class="text-lg font-bold text-white mb-4">💳 UPI/Bank Transaction Details</h3>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">UTR Number (12 digits)</label>
+                            <input type="text" id="utr-input" placeholder="123456789012" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">Receiver UPI ID (optional)</label>
+                            <input type="text" id="vpa-input" placeholder="fraudster@paytm" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        </div>
+                        <button onclick="startTrace()" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-lg font-bold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg">
+                            🔍 Start Tracing UPI Transaction
+                        </button>
+                    </div>
+                `,
+                'crypto': `
+                    <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                        <h3 class="text-lg font-bold text-white mb-4">₿ Cryptocurrency Transaction</h3>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">Transaction Hash</label>
+                            <input type="text" id="tx-hash-input" placeholder="0x123abc..." class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">Blockchain</label>
+                            <select id="chain-input" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                                <option value="ethereum">Ethereum</option>
+                                <option value="bitcoin">Bitcoin</option>
+                                <option value="polygon">Polygon</option>
+                                <option value="bsc">Binance Smart Chain</option>
+                            </select>
+                        </div>
+                        <button onclick="startTrace()" class="w-full bg-gradient-to-r from-purple-500 to-pink-600 text-white py-4 rounded-lg font-bold hover:from-purple-600 hover:to-pink-700 transition-all shadow-lg">
+                            🔍 Trace Blockchain Transaction
+                        </button>
+                    </div>
+                `,
+                'phone': `
+                    <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                        <h3 class="text-lg font-bold text-white mb-4">📱 Phone Number Investigation</h3>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">Phone Number (10 digits)</label>
+                            <input type="tel" id="phone-input" placeholder="9876543210" maxlength="10" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-green-500 focus:outline-none">
+                        </div>
+                        <div class="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3">
+                            <p class="text-yellow-400 text-xs">⚠️ We'll trace operator, location, fraud reports, and linked accounts</p>
+                        </div>
+                        <button onclick="startTrace()" class="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-4 rounded-lg font-bold hover:from-green-600 hover:to-teal-700 transition-all shadow-lg">
+                            🔍 Investigate Phone Number
+                        </button>
+                    </div>
+                `,
+                'ip': `
+                    <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                        <h3 class="text-lg font-bold text-white mb-4">🌐 IP Address Tracing</h3>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">IP Address</label>
+                            <input type="text" id="ip-input" placeholder="192.168.1.1" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        </div>
+                        <div class="bg-blue-900/30 border border-blue-700 rounded-lg p-3">
+                            <p class="text-blue-400 text-xs">ℹ️ We'll find ISP, location, proxy/VPN status, and threat level</p>
+                        </div>
+                        <button onclick="startTrace()" class="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-4 rounded-lg font-bold hover:from-orange-600 hover:to-red-700 transition-all shadow-lg">
+                            🔍 Trace IP Address
+                        </button>
+                    </div>
+                `,
+                'website': `
+                    <div class="bg-gray-900/50 rounded-lg p-6 space-y-4">
+                        <h3 class="text-lg font-bold text-white mb-4">🕸️ Phishing Website Analysis</h3>
+                        <div>
+                            <label class="text-gray-400 text-sm mb-2 block">Suspicious URL</label>
+                            <input type="url" id="url-input" placeholder="https://fake-bank.com" class="w-full bg-gray-800 text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-red-500 focus:outline-none">
+                        </div>
+                        <div class="bg-red-900/30 border border-red-700 rounded-lg p-3">
+                            <p class="text-red-400 text-xs">⚠️ We'll check domain age, hosting, SSL, and phishing indicators</p>
+                        </div>
+                        <button onclick="startTrace()" class="w-full bg-gradient-to-r from-red-500 to-pink-600 text-white py-4 rounded-lg font-bold hover:from-red-600 hover:to-pink-700 transition-all shadow-lg">
+                            🔍 Analyze Website
+                        </button>
+                    </div>
+                `
+            };
+            
+            inputArea.innerHTML = forms[type];
+        }
 
+        async function startTrace() {
+            const resultsArea = document.getElementById('results-area');
+            const loading = document.getElementById('loading');
+            const traceResults = document.getElementById('trace-results');
+            
+            resultsArea.classList.remove('hidden');
+            loading.classList.remove('hidden');
+            traceResults.classList.add('hidden');
+            
+            // Animate loading steps
+            setTimeout(() => document.getElementById('step-1').style.opacity = '1', 500);
+            setTimeout(() => document.getElementById('step-2').style.opacity = '1', 1500);
+            setTimeout(() => document.getElementById('step-3').style.opacity = '1', 2500);
+            setTimeout(() => document.getElementById('step-4').style.opacity = '1', 3500);
+            
+            // Prepare request data
+            let requestData = { trace_type: currentTraceType };
+            
+            if (currentTraceType === 'upi') {
+                requestData.utr_number = document.getElementById('utr-input').value;
+                requestData.receiver_vpa = document.getElementById('vpa-input').value;
+            } else if (currentTraceType === 'crypto') {
+                requestData.transaction_hash = document.getElementById('tx-hash-input').value;
+                requestData.blockchain = document.getElementById('chain-input').value;
+            } else if (currentTraceType === 'phone') {
+                requestData.phone_number = document.getElementById('phone-input').value;
+            } else if (currentTraceType === 'ip') {
+                requestData.ip_address = document.getElementById('ip-input').value;
+            } else if (currentTraceType === 'website') {
+                requestData.url = document.getElementById('url-input').value;
+            }
+            
             try {
-                const response = await fetch('/upload', {
+                const response = await fetch('/api/trace-fraud', {
                     method: 'POST',
-                    body: formData,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(requestData)
                 });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Server error: ${response.status}`);
-                }
-
-                const data = await response.json();
-                displayResults(data);
-
-            } catch (error) {
-                console.error("Upload failed:", error);
-                showError(error.message);
-                resultsContainer.classList.add('hidden');
-            } finally {
-                loadingSpinner.classList.add('hidden');
                 
-                // Re-enable all buttons that have a file selected
-                document.querySelectorAll('.uploader-card button').forEach(btn => {
-                    const type = btn.id.split('-')[0];
-                    if (selectedFiles[type]) {
-                        btn.disabled = false;
-                        btn.classList.remove('disabled-button');
-                    }
-                    // Restore original text
-                    if (btn.id === 'image-upload-button') btn.textContent = 'Analyze Image';
-                    if (btn.id === 'video-upload-button') btn.textContent = 'Analyze Video';
-                    if (btn.id === 'audio-upload-button') btn.textContent = 'Analyze Audio';
-                });
+                const data = await response.json();
+                
+                setTimeout(() => {
+                    loading.classList.add('hidden');
+                    traceResults.classList.remove('hidden');
+                    displayResults(data);
+                }, 4000);
+                
+            } catch (error) {
+                loading.classList.add('hidden');
+                traceResults.classList.remove('hidden');
+                traceResults.innerHTML = `
+                    <div class="bg-red-900/30 border border-red-700 rounded-xl p-6">
+                        <p class="text-red-400 font-bold">Error: ${error.message}</p>
+                    </div>
+                `;
             }
         }
 
-        // Function to set up each of the three uploaders
-        function setupUploader(type, inputId, nameDisplayId, buttonId) {
-            const fileInput = document.getElementById(inputId);
-            const fileNameDisplay = document.getElementById(nameDisplayId);
-            const uploadButton = document.getElementById(buttonId);
-
-            uploadButton.disabled = true;
-
-            fileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    selectedFiles[type] = file; 
-                    fileNameDisplay.textContent = file.name;
-                    uploadButton.disabled = false; 
-                    uploadButton.classList.remove('disabled-button');
-                } else {
-                    selectedFiles[type] = null;
-                    fileNameDisplay.textContent = `Choose a ${type}...`;
-                    uploadButton.disabled = true; 
-                    uploadButton.classList.add('disabled-button');
-                }
-                // Don't clear fileInput.value here, as it's part of the standard input
-            });
-
-            uploadButton.addEventListener('click', () => {
-                handleFileUpload(selectedFiles[type], uploadButton);
-            });
-        }
-
-        // Display Results function
         function displayResults(data) {
-            let cardContent = '';
-            let cardClass = '';
-
-            if (data.is_deepfake) {
-                // Style for "Deepfake Detected"
-                cardClass = 'bg-red-900/50 border border-red-700';
-                cardContent = `
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-red-300 mr-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <div>
-                            <h3 class="text-2xl font-bold text-red-100">Deepfake Detected</h3>
-                            <p class="text-red-200 mt-1">${data.message}</p>
-                            <div class="text-4xl font-bold text-white mt-4">${data.confidence}% <span class="text-lg font-normal">Confidence (Deepfake)</span></div>
+            const traceResults = document.getElementById('trace-results');
+            
+            let html = `
+                <!-- Summary Card -->
+                <div class="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border-2 ${data.fraudster_identified ? 'border-green-500' : 'border-yellow-500'} rounded-xl p-6">
+                    <h2 class="text-2xl font-bold text-white mb-4">🎯 Investigation Summary</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-black/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Fraudster Status</p>
+                            <p class="text-2xl font-bold ${data.fraudster_identified ? 'text-green-400' : 'text-yellow-400'}">
+                                ${data.fraudster_identified ? '✓ IDENTIFIED' : '⚠️ PARTIAL DATA'}
+                            </p>
+                        </div>
+                        <div class="bg-black/30 rounded-lg p-4">
+                            <p class="text-gray-400 text-sm mb-1">Money Recovery</p>
+                            <p class="text-2xl font-bold ${data.money_recoverable ? 'text-green-400' : 'text-red-400'}">
+                                ${data.money_recoverable ? '✓ POSSIBLE' : '✗ DIFFICULT'}
+                            </p>
                         </div>
                     </div>
-                `;
-            } else {
-                // Style for "Authentic"
-                cardClass = 'bg-green-900/50 border border-green-700';
-                cardContent = `
-                    <div class="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-300 mr-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <div>
-                            <h3 class="text-2xl font-bold text-green-100">Authentic</h3>
-                            <p class="text-green-200 mt-1">${data.message}</p>
-                            <div class="text-4xl font-bold text-white mt-4">${data.confidence}% <span class="text-lg font-normal">Confidence (Authentic)</span></div>
+                </div>
+            `;
+            
+            // Fraudster Details
+            if (data.fraudster_details) {
+                const details = data.fraudster_details;
+                html += `
+                    <div class="bg-gray-800/80 border-2 border-red-500 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-red-400 mb-4">👤 Fraudster Details Revealed</h3>
+                        <div class="space-y-3">
+                            ${details.phone_number ? `
+                                <div class="bg-gray-900/50 rounded-lg p-4">
+                                    <p class="text-gray-400 text-sm">Phone Number</p>
+                                    <p class="text-white font-bold text-lg">${details.phone_number}</p>
+                                    <p class="text-gray-500 text-xs">${details.operator || ''} • ${details.circle || ''}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${details.upi_id ? `
+                                <div class="bg-gray-900/50 rounded-lg p-4">
+                                    <p class="text-gray-400 text-sm">UPI ID</p>
+                                    <p class="text-white font-bold">${details.upi_id}</p>
+                                    <p class="text-gray-500 text-xs">Provider: ${details.provider || 'Unknown'}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${details.location_area ? `
+                                <div class="bg-gray-900/50 rounded-lg p-4">
+                                    <p class="text-gray-400 text-sm">Location</p>
+                                    <p class="text-white font-bold">${details.location_area}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${details.fraud_reports ? `
+                                <div class="bg-red-900/30 border border-red-700 rounded-lg p-4">
+                                    <p class="text-red-400 font-bold">⚠️ Fraud Reports: ${details.fraud_reports.total_reports}</p>
+                                    <p class="text-red-300 text-sm">Categories: ${details.fraud_reports.report_categories ? details.fraud_reports.report_categories.join(', ') : 'Multiple'}</p>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
             }
-
-            resultCard.className = `rounded-lg p-6 ${cardClass}`;
-            resultCard.innerHTML = cardContent;
             
-            resultContent.classList.remove('hidden');
+            // Recovery Actions
+            if (data.recovery_actions && data.recovery_actions.length > 0) {
+                html += `
+                    <div class="bg-green-900/30 border border-green-700 rounded-xl p-6">
+                        <h3 class="text-xl font-bold text-green-400 mb-4">💰 Recovery Actions</h3>
+                        <div class="space-y-3">
+                            ${data.recovery_actions.map((action, i) => `
+                                <div class="bg-gray-900/50 rounded-lg p-4 border-l-4 ${
+                                    action.priority === 'CRITICAL' ? 'border-red-500' :
+                                    action.priority === 'HIGH' ? 'border-orange-500' : 'border-blue-500'
+                                }">
+                                    <div class="flex items-start justify-between">
+                                        <div class="flex-1">
+                                            <p class="font-bold text-white">${i + 1}. ${action.action}</p>
+                                            <p class="text-gray-400 text-sm mt-1">${action.details}</p>
+                                            ${action.deadline ? `<p class="text-yellow-400 text-xs mt-2">⏰ ${action.deadline}</p>` : ''}
+                                        </div>
+                                        <span class="px-3 py-1 rounded-full text-xs font-bold ${
+                                            action.priority === 'CRITICAL' ? 'bg-red-600' :
+                                            action.priority === 'HIGH' ? 'bg-orange-600' : 'bg-blue-600'
+                                        }">${action.priority}</span>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Legal Actions
+            html += `
+                <div class="bg-blue-900/30 border border-blue-700 rounded-xl p-6">
+                    <h3 class="text-xl font-bold text-blue-400 mb-4">⚖️ Legal Steps to Take</h3>
+                    <div class="space-y-3">
+                        ${data.legal_actions.map(action => `
+                            <div class="bg-gray-900/50 rounded-lg p-4">
+                                <div class="flex items-start space-x-3">
+                                    <div class="bg-blue-600 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold">
+                                        ${action.step}
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="font-bold text-white">${action.action}</p>
+                                        <p class="text-gray-400 text-sm mt-1">${action.details}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            traceResults.innerHTML = html;
         }
-
-        // Error Functions
-        function showError(message) {
-            errorText.textContent = message;
-            errorMessage.classList.remove('hidden');
-        }
-
-        function hideError() {
-            errorMessage.classList.add('hidden');
-        }
-        
-        // --- Initialize all three uploaders ---
-        setupUploader('image', 'image-file-upload', 'image-file-name', 'image-upload-button');
-        setupUploader('video', 'video-file-upload', 'video-file-name', 'video-upload-button');
-        setupUploader('audio', 'audio-file-upload', 'audio-file-name', 'audio-upload-button');
-
     </script>
 </body>
 </html>
-
